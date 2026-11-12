@@ -368,10 +368,31 @@ d:\ciniflow\
 │   ├── test_routes.py              # HTTP route integration tests
 │   └── test_crud.py                # CRUD operations tests
 ├── cineflow.db                     # SQLite database (auto-created on startup)
+├── Jenkinsfile                     # Declarative Jenkins CI/CD pipeline
 ├── requirements.txt                # Pinned Python dependencies
 ├── run.py                          # Application entry point
 └── README.md                       # Complete software engineering documentation
 ```
+
+---
+
+## 🔄 CI/CD Integration with Jenkins
+
+CineFlow includes a cross-platform Declarative **`Jenkinsfile`** supporting both Windows and Linux Jenkins agents.
+
+### Pipeline Stages
+1. **Checkout**: Pulls source code from GitHub (`https://github.com/sanjaybharadwaj014-create/cineflow.git`).
+2. **Setup Python Environment**: Creates an isolated `.venv` (using `uv` or `python -m venv`) and installs `requirements.txt`.
+3. **Syntax & Lint Check**: Compiles all Python modules (`compileall`) to catch syntax errors early.
+4. **Run Automated Tests (`pytest`)**: Executes all 19 test cases and publishes JUnit XML results (`reports/junit.xml`).
+5. **Application Smoke Verification**: Boots the Flask app factory with `TestConfig` and verifies HTTP 200 across all 7 routes.
+
+### Connecting in Jenkins
+1. Open Jenkins at **`http://localhost:8080`**.
+2. Click **New Item** → name it `cineflow-ci` → choose **Pipeline** → **OK**.
+3. Under **Triggers**, enable **Poll SCM** (e.g. `H/5 * * * *`) or **GitHub hook trigger for GITScm polling**.
+4. Under **Pipeline**, set **Definition** to **Pipeline script from SCM** → **SCM**: `Git` → **Repository URL**: `https://github.com/sanjaybharadwaj014-create/cineflow.git` → **Branch Specifier**: `*/main` → **Script Path**: `Jenkinsfile`.
+5. Save and click **Build Now**.
 
 ---
 

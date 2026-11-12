@@ -30,10 +30,11 @@ ENV/
 *.db
 *.sqlite3
 
-# Pytest / Coverage
+# Pytest / Coverage / CI Reports
 .pytest_cache/
 .coverage
 htmlcov/
+reports/
 
 # IDE / OS
 .idea/
