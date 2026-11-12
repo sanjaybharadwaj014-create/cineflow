@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: '[https://github.com/sanjaybharadwaj014-create/cineflow](https://github.com/sanjaybharadwaj014-create/cineflow)'
             }
         }
 
