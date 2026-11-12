@@ -1,39 +1,99 @@
+
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(
+            numToKeepStr: '10'
+        ))
+    }
+
+    environment {
+        APP_URL = 'http://127.0.0.1:5000'
+        BUILD_ID = 'dontKillMe'
+    }
+
     stages {
-        stage('Build') {
+
+        stage('1. Checkout') {
             steps {
-                echo 'Building the CineFlow project...'
-                // If you need to run Windows commands, use 'bat' instead of 'sh'
-                // Example: bat 'npm install' OR bat 'pip install -r requirements.txt'
+                echo 'Checking out CineFlow from GitHub'
+                checkout scm
             }
         }
-        
-        stage('Test') {
+
+        stage('2. Environment Setup') {
             steps {
-                echo 'Running tests...'
-                // Example: bat 'pytest' OR bat 'npm test'
+                bat '''
+                    python --version
+                    git --version
+
+                    if not exist .venv (
+                        python -m venv .venv
+                    )
+
+                    .venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    .venv\\Scripts\\python.exe -m pip install -r requirements.txt
+                '''
             }
         }
-        
-        stage('Deploy') {
+
+        stage('3. Code Validation') {
             steps {
-                echo 'Deploying to server...'
-                // Add your deployment scripts here
+                bat '''
+                    .venv\\Scripts\\python.exe -m compileall -q app run.py
+                '''
+            }
+        }
+
+        stage('4. Automated Testing') {
+            steps {
+                bat '''
+                    if not exist reports mkdir reports
+
+                    .venv\\Scripts\\python.exe -m pytest -v --junitxml=reports\\junit.xml
+                '''
+            }
+
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                          testResults: 'reports/junit.xml'
+                }
+            }
+        }
+
+        stage('5. Deploy Locally') {
+            steps {
+                bat '''
+                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$port = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue; if (-not $port) { $env:BUILD_ID='dontKillMe'; $p = Start-Process -FilePath (Resolve-Path '.venv\\Scripts\\python.exe').Path -ArgumentList 'run.py' -WorkingDirectory $env:WORKSPACE -PassThru -WindowStyle Hidden -RedirectStandardOutput 'cineflow-server.log' -RedirectStandardError 'cineflow-error.log'; Set-Content -Path 'cineflow.pid' -Value $p.Id; }"
+                '''
+            }
+        }
+
+        stage('6. Application Health Check') {
+            steps {
+                bat '''
+                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ready = $false; for ($i=0; $i -lt 30; $i++) { try { $r = Invoke-WebRequest -Uri $env:APP_URL -UseBasicParsing -TimeoutSec 3; if ($r.StatusCode -eq 200) { $ready = $true; break } } catch { Start-Sleep -Seconds 2 } }; if (-not $ready) { Get-Content cineflow-error.log -ErrorAction SilentlyContinue; throw 'CineFlow failed to start or respond on port 5000' }"
+                '''
             }
         }
     }
-    
+
     post {
-        always {
-            echo 'Pipeline execution finished.'
-        }
         success {
-            echo 'Build completed successfully.'
+            echo 'CineFlow pipeline completed successfully.'
+            echo 'Application: http://127.0.0.1:5000'
         }
+
         failure {
-            echo 'Pipeline failed. Please check the console output.'
+            echo 'CineFlow pipeline failed. Check Console Output.'
+        }
+
+        always {
+            echo 'CineFlow pipeline execution finished.'
         }
     }
 }
