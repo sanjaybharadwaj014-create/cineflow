@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Production Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>🎬</span> Cinema Production Dashboard
+    </h1>
+    <p class="page-subtitle">Real-time overview of active film projects, scene progress, and daily call sheets.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('schedules.create') }}" class="btn btn-secondary">
+      <span>📅</span> Add Call Sheet
+    </a>
+    <a href="{{ url_for('films.create') }}" class="btn btn-primary">
+      <span>+</span> New Film Project
+    </a>
+  </div>
+</div>
+
+<!-- Primary Key Statistics Cards -->
+<div class="stats-grid">
+  <!-- Total Films -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Total Films</span>
+      <div class="stat-icon icon-gold">🎬</div>
+    </div>
+    <div class="stat-value">{{ total_films }}</div>
+    <div class="stat-subtext">Active slate in production pipeline</div>
+  </div>
+
+  <!-- Total Scenes -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Total Scenes</span>
+      <div class="stat-icon icon-blue">🎞️</div>
+    </div>
+    <div class="stat-value">{{ total_scenes }}</div>
+    <div class="stat-subtext">Scripted scenes across all films</div>
+  </div>
+
+  <!-- Completed Scenes -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Completed Scenes</span>
+      <div class="stat-icon icon-emerald">✅</div>
+    </div>
+    <div class="stat-value">{{ completed_scenes }}</div>
+    <div class="stat-subtext">{{ scene_progress_pct }}% overall wrap completion</div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: {{ scene_progress_pct }}%;"></div>
+    </div>
+  </div>
+
+  <!-- Production Team -->
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Cast & Crew</span>
+      <div class="stat-icon icon-purple">👥</div>
+    </div>
+    <div class="stat-value">{{ total_crew }}</div>
+    <div class="stat-subtext">Actors and technical department heads</div>
+  </div>
+</div>
+
+<!-- Production Status Overview Section -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>⚡</span> Current Production Status Breakdown
+    </h2>
+    <a href="{{ url_for('production.index') }}" class="btn btn-secondary btn-sm">
+      Open Stage Pipeline &rarr;
+    </a>
+  </div>
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+      {% for status in production_statuses %}
+        <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; border-left: 4px solid {% if status == 'Pre-production' %}var(--accent-purple){% elif status == 'Shooting' %}var(--accent-amber){% elif status == 'Post-production' %}var(--accent-cyan){% else %}var(--accent-emerald){% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 0.82rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">{{ status }}</span>
+            <span class="badge {{ status_badge_class(status) }}">{{ status_counts[status] }} Films</span>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);">
+            {{ status_counts[status] }}
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 4px;">
+            {% if total_films > 0 %}
+              {{ ((status_counts[status] / total_films) * 100) | round(1) }}% of total portfolio
+            {% else %}
+              0% of total portfolio
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Main Split: Active Films & Upcoming Shooting Schedules -->
+<div class="content-grid">
+  <!-- Active Film Slate Table -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span>📽️</span> Production Film Slate
+      </h2>
+      <a href="{{ url_for('films.index') }}" class="btn btn-secondary btn-sm">
+        View All Films
+      </a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Film ID</th>
+            <th>Title & Director</th>
+            <th>Genre</th>
+            <th>Status</th>
+            <th>Scenes</th>
+            <th>Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for film in active_films %}
+            <tr>
+              <td>
+                <span class="code-pill">{{ film.film_code }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('films.detail', film_id=film.id) }}" class="table-film-title">
+                  {{ film.title }}
+                </a>
+                <div style="font-size: 0.78rem; color: var(--text-subtle);">
+                  Dir. {{ film.director }}
+                </div>
+              </td>
+              <td>{{ film.genre }}</td>
+              <td>
+                <span class="badge {{ status_badge_class(film.production_status) }}">
+                  <span class="badge-dot"></span>
+                  {{ film.production_status }}
+                </span>
+              </td>
+              <td style="font-size: 0.85rem;">
+                <strong>{{ film.completed_scenes }}</strong> / {{ film.total_scenes }}
+              </td>
+              <td style="min-width: 110px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div class="progress-track" style="margin-top: 0; flex: 1;">
+                    <div class="progress-fill" style="width: {{ film.progress_percentage }}%;"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                    {{ film.progress_percentage }}%
+                  </span>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                No films registered yet. <a href="{{ url_for('films.create') }}" style="color: var(--accent-gold);">Add your first film</a>.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Upcoming Shooting Schedules Column -->
+  <div>
+    <!-- Today's Shoot Call Sheet (if active) -->
+    {% if today_schedules %}
+      <div class="card" style="border-color: var(--accent-amber); box-shadow: var(--shadow-gold);">
+        <div class="card-header" style="background: rgba(245, 158, 11, 0.1);">
+          <h2 class="card-title" style="color: var(--accent-gold);">
+            <span>⚡</span> Active Today on Set
+          </h2>
+          <span class="badge badge-amber">Live Shoot</span>
+        </div>
+        <div class="card-body">
+          {% for shoot in today_schedules %}
+            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="code-pill">{{ shoot.film.title }}</span>
+                <span style="font-family: var(--font-mono); color: var(--accent-gold); font-weight: 700;">
+                  Call: {{ shoot.call_time }}
+                </span>
+              </div>
+              <div style="font-weight: 700; margin-top: 6px;">
+                Scene {{ shoot.scene.scene_number }}: {{ shoot.scene.day_night }}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                📍 {{ shoot.location }}
+              </div>
+              {% if shoot.notes %}
+                <div style="font-size: 0.78rem; color: var(--text-subtle); margin-top: 4px; font-style: italic;">
+                  Note: {{ shoot.notes }}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Upcoming Shooting Schedules Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>📅</span> Upcoming Shooting Schedules
+        </h2>
+        <a href="{{ url_for('schedules.index', view='upcoming') }}" class="btn btn-secondary btn-sm">
+          All Schedules
+        </a>
+      </div>
+      <div class="card-body" style="padding: 0.75rem;">
+        {% if upcoming_schedules %}
+          <div class="call-sheet-list">
+            {% for shoot in upcoming_schedules %}
+              <div style="background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.9rem; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);">
+                    📅 {{ shoot.date }} &bull; {{ shoot.call_time }}
+                  </span>
+                  <span class="badge {{ status_badge_class(shoot.status) }}">
+                    {{ shoot.status }}
+                  </span>
+                </div>
+                <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-main);">
+                  {{ shoot.film.title }} &bull; Scene {{ shoot.scene.scene_number }}
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                  📍 {{ shoot.location }}
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-subtle);">
+                  Cast: {{ shoot.scene.characters }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="text-align: center; color: var(--text-muted); padding: 2rem 1rem;">
+            No upcoming shoots scheduled.
+            <div style="margin-top: 10px;">
+              <a href="{{ url_for('schedules.create') }}" class="btn btn-primary btn-sm">Schedule a Scene</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

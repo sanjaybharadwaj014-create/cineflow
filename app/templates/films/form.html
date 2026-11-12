@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Film' if action == 'edit' else 'Add New Film' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>🎬</span> {{ 'Edit Film Project' if action == 'edit' else 'Register New Film Project' }}
+    </h1>
+    <p class="page-subtitle">Configure core metadata, director, genre, timeline, and current production status.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('films.index') }}" class="btn btn-secondary">
+      &larr; Back to Films
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-grid">
+      <!-- Film ID Code -->
+      <div class="form-group">
+        <label for="film_code" class="form-label">
+          Film ID / Slate Code <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="film_code"
+          name="film_code"
+          class="form-control"
+          placeholder="e.g. FLM-101"
+          value="{{ film.film_code if film else '' }}"
+          required
+        >
+        <span class="form-help">Unique studio tracking code (e.g. FLM-101, PROD-A).</span>
+      </div>
+
+      <!-- Film Title -->
+      <div class="form-group">
+        <label for="title" class="form-label">
+          Film Title <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          class="form-control"
+          placeholder="e.g. Shadows of Neon"
+          value="{{ film.title if film else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Director -->
+      <div class="form-group">
+        <label for="director" class="form-label">
+          Director <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="director"
+          name="director"
+          class="form-control"
+          placeholder="e.g. Sofia Alvarez"
+          value="{{ film.director if film else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Genre -->
+      <div class="form-group">
+        <label for="genre" class="form-label">
+          Genre <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="genre"
+          name="genre"
+          class="form-control"
+          placeholder="e.g. Sci-Fi Noir, Drama, Thriller"
+          value="{{ film.genre if film else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Production Status -->
+      <div class="form-group">
+        <label for="production_status" class="form-label">
+          Production Status <span class="req">*</span>
+        </label>
+        <select id="production_status" name="production_status" class="form-control form-select" required>
+          {% for status in production_statuses %}
+            <option value="{{ status }}" {% if film and film.production_status == status %}selected{% endif %}>
+              {{ status }}
+            </option>
+          {% endfor %}
+        </select>
+        <span class="form-help">Pre-production, Shooting, Post-production, or Completed.</span>
+      </div>
+
+      <!-- Budget -->
+      <div class="form-group">
+        <label for="budget" class="form-label">
+          Estimated Budget
+        </label>
+        <input
+          type="text"
+          id="budget"
+          name="budget"
+          class="form-control"
+          placeholder="e.g. $15,000,000"
+          value="{{ film.budget if film else '' }}"
+        >
+      </div>
+
+      <!-- Start Date -->
+      <div class="form-group">
+        <label for="start_date" class="form-label">
+          Start Date <span class="req">*</span>
+        </label>
+        <input
+          type="date"
+          id="start_date"
+          name="start_date"
+          class="form-control"
+          value="{{ film.start_date if film else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Expected Completion Date -->
+      <div class="form-group">
+        <label for="expected_completion_date" class="form-label">
+          Expected Completion Date <span class="req">*</span>
+        </label>
+        <input
+          type="date"
+          id="expected_completion_date"
+          name="expected_completion_date"
+          class="form-control"
+          value="{{ film.expected_completion_date if film else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Synopsis -->
+      <div class="form-group form-col-full">
+        <label for="synopsis" class="form-label">
+          Logline / Synopsis
+        </label>
+        <textarea
+          id="synopsis"
+          name="synopsis"
+          rows="4"
+          class="form-control"
+          placeholder="Brief storyline overview or premise..."
+        >{{ film.synopsis if film else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('films.index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Save Changes' if action == 'edit' else 'Create Film Project' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

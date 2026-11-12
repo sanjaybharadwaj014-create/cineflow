@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Member' if action == 'edit' else 'Add Cast or Crew Member' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>👥</span> {{ 'Edit Production Member' if action == 'edit' else 'Add Cast or Crew Member' }}
+    </h1>
+    <p class="page-subtitle">Register actors, department heads, and technical specialists to the production roster.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('crew.index') }}" class="btn btn-secondary">
+      &larr; Back to Directory
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-grid">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="name" class="form-label">
+          Full Name <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          class="form-control"
+          placeholder="e.g. Alexander Vance"
+          value="{{ member.name if member else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Department -->
+      <div class="form-group">
+        <label for="department" class="form-label">
+          Department <span class="req">*</span>
+        </label>
+        <select id="department" name="department" class="form-control form-select" required>
+          {% for dept in departments %}
+            <option
+              value="{{ dept }}"
+              {% if member and member.department == dept %}selected
+              {% elif preselected_dept and preselected_dept == dept %}selected
+              {% endif %}
+            >
+              {{ dept }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Role / Job Title -->
+      <div class="form-group">
+        <label for="role" class="form-label">
+          Role / Designation <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="role"
+          name="role"
+          class="form-control"
+          placeholder="e.g. Lead Actor, Director of Photography, Gaffer"
+          value="{{ member.role if member else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Character (for Actors / Cast) -->
+      <div class="form-group" id="character-group">
+        <label for="character" class="form-label">
+          Character Name (for Cast)
+        </label>
+        <input
+          type="text"
+          id="character"
+          name="character"
+          class="form-control"
+          placeholder="e.g. Kaelen Thorne (or leave N/A for crew)"
+          value="{{ member.character if member else '' }}"
+        >
+        <span class="form-help">Character name for actors, or 'N/A' for technical crew.</span>
+      </div>
+
+      <!-- Contact -->
+      <div class="form-group">
+        <label for="contact" class="form-label">
+          Contact Details <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="contact"
+          name="contact"
+          class="form-control"
+          placeholder="e.g. alex.vance@agency.com / +1-555-0142"
+          value="{{ member.contact if member else '' }}"
+          required
+        >
+        <span class="form-help">Email, phone, or agent representation.</span>
+      </div>
+
+      <!-- Assigned Film -->
+      <div class="form-group">
+        <label for="film_id" class="form-label">
+          Assigned Film Project
+        </label>
+        <select id="film_id" name="film_id" class="form-control form-select">
+          <option value="">-- All Projects / Studio Wide --</option>
+          {% for f in films %}
+            <option
+              value="{{ f.id }}"
+              {% if member and member.film_id == f.id %}selected
+              {% elif preselected_film_id and preselected_film_id == f.id %}selected
+              {% endif %}
+            >
+              {{ f.title }} ({{ f.film_code }})
+            </option>
+          {% endfor %}
+        </select>
+        <span class="form-help">Leave blank if available across all productions.</span>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group form-col-full">
+        <label for="notes" class="form-label">
+          Technical / Rider Notes
+        </label>
+        <textarea
+          id="notes"
+          name="notes"
+          rows="3"
+          class="form-control"
+          placeholder="Availability windows, special equipment certifications, stunt double details, dietary restrictions..."
+        >{{ member.notes if member else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('crew.index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Update Member' if action == 'edit' else 'Add to Roster' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

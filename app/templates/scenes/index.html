@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Scene Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>🎞️</span> Scene Management
+    </h1>
+    <p class="page-subtitle">Track scene numbers, locations, cast requirements, INT/EXT lighting, and filming status.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('scenes.create') }}" class="btn btn-primary">
+      <span>+</span> Add New Scene
+    </a>
+  </div>
+</div>
+
+<!-- Filter Toolbar -->
+<form method="GET" action="{{ url_for('scenes.index') }}" class="filter-toolbar">
+  <div class="filter-group">
+    <input
+      type="text"
+      name="q"
+      value="{{ search_query }}"
+      placeholder="Search scene #, location, character..."
+      class="form-control"
+      style="min-width: 220px;"
+    >
+
+    <!-- Film Selector -->
+    <select name="film_id" class="form-control form-select">
+      <option value="">All Film Productions</option>
+      {% for f in films %}
+        <option value="{{ f.id }}" {% if selected_film_id == f.id %}selected{% endif %}>
+          {{ f.title }} ({{ f.film_code }})
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Status Selector -->
+    <select name="status" class="form-control form-select">
+      <option value="">All Statuses</option>
+      {% for st in scene_statuses %}
+        <option value="{{ st }}" {% if status_filter == st %}selected{% endif %}>
+          {{ st }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Day / Night Selector -->
+    <select name="day_night" class="form-control form-select">
+      <option value="">All Lighting / Time</option>
+      {% for dn in day_night_choices %}
+        <option value="{{ dn }}" {% if day_night_filter == dn %}selected{% endif %}>
+          {{ dn }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or selected_film_id or status_filter or day_night_filter %}
+      <a href="{{ url_for('scenes.index') }}" class="btn btn-secondary btn-sm" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </div>
+
+  <div style="font-size: 0.85rem; color: var(--text-muted);">
+    Total: <strong>{{ scenes|length }}</strong> scene{{ 's' if scenes|length != 1 else '' }}
+  </div>
+</form>
+
+<!-- Scene Slate Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Scene #</th>
+          <th>Film Project</th>
+          <th>Location</th>
+          <th>Day / Night</th>
+          <th>Characters Involved</th>
+          <th>Shooting Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sc in scenes %}
+          <tr>
+            <td>
+              <span class="code-pill" style="font-size: 0.88rem; font-weight: 700;">
+                Scene {{ sc.scene_number }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('films.detail', film_id=sc.film_id) }}" class="table-film-title">
+                {{ sc.film.title }}
+              </a>
+            </td>
+            <td>
+              <strong>{{ sc.location }}</strong>
+              {% if sc.description %}
+                <div style="font-size: 0.78rem; color: var(--text-subtle); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  {{ sc.description }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size: 0.85rem;">
+                {{ day_night_icon(sc.day_night) }} {{ sc.day_night }}
+              </span>
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 240px;">
+              {{ sc.characters }}
+            </td>
+            <td style="font-size: 0.82rem; white-space: nowrap;">
+              {{ sc.shooting_date or 'Not Scheduled' }}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('scenes.update_status', scene_id=sc.id) }}">
+                <select name="status" class="form-control form-select" style="padding: 3px 26px 3px 8px; font-size: 0.78rem;" onchange="this.form.submit()">
+                  {% for st in scene_statuses %}
+                    <option value="{{ st }}" {% if sc.status == st %}selected{% endif %}>
+                      {{ st }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <a href="{{ url_for('scenes.edit', scene_id=sc.id) }}" class="btn btn-secondary btn-sm" title="Edit Scene">
+                  ✏️
+                </a>
+                <a href="{{ url_for('schedules.create', scene_id=sc.id, film_id=sc.film_id) }}" class="btn btn-secondary btn-sm" title="Add to Call Sheet">
+                  📅
+                </a>
+                <form method="POST" action="{{ url_for('scenes.delete', scene_id=sc.id) }}" data-confirm="Are you sure you want to delete Scene {{ sc.scene_number }}?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Scene">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              No scenes found matching the criteria.
+              <div style="margin-top: 1rem;">
+                <a href="{{ url_for('scenes.create') }}" class="btn btn-primary btn-sm">Add New Scene</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

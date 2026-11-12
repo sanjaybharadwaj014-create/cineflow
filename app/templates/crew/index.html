@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Cast & Crew Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>👥</span> Cast & Crew Management
+    </h1>
+    <p class="page-subtitle">Production personnel directory across Direction, Camera, Sound, Lighting, Cast, Art, and Logistics.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('crew.create') }}" class="btn btn-primary">
+      <span>+</span> Add Cast / Crew Member
+    </a>
+  </div>
+</div>
+
+<!-- Filter Toolbar -->
+<form method="GET" action="{{ url_for('crew.index') }}" class="filter-toolbar">
+  <div class="filter-group">
+    <input
+      type="text"
+      name="q"
+      value="{{ search_query }}"
+      placeholder="Search name, role, character, contact..."
+      class="form-control"
+      style="min-width: 240px;"
+    >
+
+    <!-- Department Selector -->
+    <select name="department" class="form-control form-select">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+        <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>
+          {{ dept }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Film Selector -->
+    <select name="film_id" class="form-control form-select">
+      <option value="">All Film Productions</option>
+      {% for f in films %}
+        <option value="{{ f.id }}" {% if selected_film_id == f.id %}selected{% endif %}>
+          {{ f.title }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or selected_dept or selected_film_id %}
+      <a href="{{ url_for('crew.index') }}" class="btn btn-secondary btn-sm" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </div>
+
+  <div style="font-size: 0.85rem; color: var(--text-muted);">
+    Total: <strong>{{ members|length }}</strong> crew & cast member{{ 's' if members|length != 1 else '' }}
+  </div>
+</form>
+
+<!-- Crew Roster Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role / Title</th>
+          <th>Department</th>
+          <th>Character / Focus</th>
+          <th>Film Assigned</th>
+          <th>Contact</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in members %}
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--text-main);">
+                {{ m.name }}
+              </div>
+              {% if m.notes %}
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">
+                  {{ m.notes }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-weight: 500;">{{ m.role }}</span>
+            </td>
+            <td>
+              <span class="badge {% if m.department == 'Cast' %}badge-amber{% elif m.department == 'Direction' %}badge-purple{% elif m.department == 'Camera' %}badge-cyan{% elif m.department == 'Sound' %}badge-blue{% else %}badge-secondary{% endif %}">
+                {{ m.department }}
+              </span>
+            </td>
+            <td>
+              {% if m.department == 'Cast' and m.character and m.character != 'N/A' %}
+                <span class="code-pill">Character: {{ m.character }}</span>
+              {% else %}
+                <span style="color: var(--text-subtle); font-size: 0.85rem;">{{ m.character }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.film %}
+                <a href="{{ url_for('films.detail', film_id=m.film.id) }}" class="table-film-title">
+                  {{ m.film.title }}
+                </a>
+              {% else %}
+                <span style="color: var(--text-subtle); font-size: 0.85rem;">Studio Wide / All</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">
+              {{ m.contact }}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('crew.edit', member_id=m.id) }}" class="btn btn-secondary btn-sm" title="Edit Member">
+                  ✏️
+                </a>
+                <form method="POST" action="{{ url_for('crew.delete', member_id=m.id) }}" data-confirm="Remove {{ m.name }} from production roster?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Member">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              No cast or crew records found.
+              <div style="margin-top: 1rem;">
+                <a href="{{ url_for('crew.create') }}" class="btn btn-primary btn-sm">Add Cast / Crew Member</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

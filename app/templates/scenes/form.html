@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Scene' if action == 'edit' else 'Add New Scene' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>🎞️</span> {{ 'Edit Scene ' ~ scene.scene_number if action == 'edit' else 'Create New Script Scene' }}
+    </h1>
+    <p class="page-subtitle">Define scene number, location requirements, cast involved, INT/EXT lighting, and filming schedule.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('scenes.index') }}" class="btn btn-secondary">
+      &larr; Back to Scenes
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-grid">
+      <!-- Scene Number -->
+      <div class="form-group">
+        <label for="scene_number" class="form-label">
+          Scene Number <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="scene_number"
+          name="scene_number"
+          class="form-control"
+          placeholder="e.g. 1A, 4, 12B"
+          value="{{ scene.scene_number if scene else '' }}"
+          required
+        >
+        <span class="form-help">Script slug scene number (e.g., 1, 2A, 14).</span>
+      </div>
+
+      <!-- Film -->
+      <div class="form-group">
+        <label for="film_id" class="form-label">
+          Associated Film Project <span class="req">*</span>
+        </label>
+        <select id="film_id" name="film_id" class="form-control form-select" required>
+          <option value="">-- Select Film --</option>
+          {% for f in films %}
+            <option
+              value="{{ f.id }}"
+              {% if scene and scene.film_id == f.id %}selected
+              {% elif preselected_film_id and preselected_film_id == f.id %}selected
+              {% endif %}
+            >
+              {{ f.title }} ({{ f.film_code }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Location -->
+      <div class="form-group form-col-full">
+        <label for="location" class="form-label">
+          Location / Set <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          class="form-control"
+          placeholder="e.g. INT. Police Interrogation Room - Stage 3"
+          value="{{ scene.location if scene else '' }}"
+          required
+        >
+        <span class="form-help">Physical filming location or soundstage setup.</span>
+      </div>
+
+      <!-- Characters -->
+      <div class="form-group form-col-full">
+        <label for="characters" class="form-label">
+          Characters in Scene <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="characters"
+          name="characters"
+          class="form-control"
+          placeholder="e.g. Kaelen Thorne, Dr. Maya Lin, 2 Enforcers"
+          value="{{ scene.characters if scene else '' }}"
+          required
+        >
+        <span class="form-help">Comma-separated character names or cast requirements.</span>
+      </div>
+
+      <!-- Day or Night -->
+      <div class="form-group">
+        <label for="day_night" class="form-label">
+          Day / Night (Lighting Condition) <span class="req">*</span>
+        </label>
+        <select id="day_night" name="day_night" class="form-control form-select" required>
+          {% for dn in day_night_choices %}
+            <option value="{{ dn }}" {% if scene and scene.day_night == dn %}selected{% endif %}>
+              {{ dn }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Shooting Date -->
+      <div class="form-group">
+        <label for="shooting_date" class="form-label">
+          Planned Shooting Date
+        </label>
+        <input
+          type="date"
+          id="shooting_date"
+          name="shooting_date"
+          class="form-control"
+          value="{{ scene.shooting_date if scene else '' }}"
+        >
+      </div>
+
+      <!-- Status -->
+      <div class="form-group">
+        <label for="status" class="form-label">
+          Scene Filming Status <span class="req">*</span>
+        </label>
+        <select id="status" name="status" class="form-control form-select" required>
+          {% for st in scene_statuses %}
+            <option value="{{ st }}" {% if scene and scene.status == st %}selected{% endif %}>
+              {{ st }}
+            </option>
+          {% endfor %}
+        </select>
+        <span class="form-help">Draft, Scheduled, Shooting, or Completed.</span>
+      </div>
+
+      <!-- Description / Script Notes -->
+      <div class="form-group form-col-full">
+        <label for="description" class="form-label">
+          Scene Summary & Director's Notes
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+          class="form-control"
+          placeholder="Key dramatic beats, special props, stunts, or visual effects notes..."
+        >{{ scene.description if scene else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('scenes.index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Update Scene' if action == 'edit' else 'Add Scene' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

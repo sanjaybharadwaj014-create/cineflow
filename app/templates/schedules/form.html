@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Call Sheet' if action == 'edit' else 'Create Shooting Call Sheet' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>📅</span> {{ 'Edit Call Sheet' if action == 'edit' else 'Create New Shooting Call Sheet' }}
+    </h1>
+    <p class="page-subtitle">Schedule scene filming, call time, crew staging location, and set readiness details.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('schedules.index') }}" class="btn btn-secondary">
+      &larr; Back to Schedules
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-grid">
+      <!-- Select Scene -->
+      <div class="form-group form-col-full">
+        <label for="scene_id" class="form-label">
+          Target Scene to Shoot <span class="req">*</span>
+        </label>
+        <select id="scene_id" name="scene_id" class="form-control form-select" required>
+          <option value="">-- Choose Scene --</option>
+          {% for sc in scenes %}
+            <option
+              value="{{ sc.id }}"
+              data-location="{{ sc.location }}"
+              data-characters="{{ sc.characters }}"
+              {% if schedule and schedule.scene_id == sc.id %}selected
+              {% elif preselected_scene_id and preselected_scene_id == sc.id %}selected
+              {% endif %}
+            >
+              [{{ sc.film.title }}] &bull; Scene {{ sc.scene_number }}: {{ sc.location }} ({{ sc.day_night }})
+            </option>
+          {% endfor %}
+        </select>
+        <span class="form-help">Selecting a scene links the film and auto-populates the shooting location.</span>
+      </div>
+
+      <!-- Date -->
+      <div class="form-group">
+        <label for="date" class="form-label">
+          Shooting Date <span class="req">*</span>
+        </label>
+        <input
+          type="date"
+          id="date"
+          name="date"
+          class="form-control"
+          value="{{ schedule.date if schedule else today_str }}"
+          required
+        >
+      </div>
+
+      <!-- Call Time -->
+      <div class="form-group">
+        <label for="call_time" class="form-label">
+          Call Time <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="call_time"
+          name="call_time"
+          class="form-control"
+          placeholder="e.g. 06:30 AM or 18:00"
+          value="{{ schedule.call_time if schedule else '07:00 AM' }}"
+          required
+        >
+        <span class="form-help">Expected crew/cast arrival and first-shot call time.</span>
+      </div>
+
+      <!-- Location -->
+      <div class="form-group form-col-full">
+        <label for="location" class="form-label">
+          Staging Location / Stage <span class="req">*</span>
+        </label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          class="form-control"
+          placeholder="e.g. Soundstage 4 - District 4 Backlot Alley"
+          value="{{ schedule.location if schedule else '' }}"
+          required
+        >
+      </div>
+
+      <!-- Status -->
+      <div class="form-group">
+        <label for="status" class="form-label">
+          Schedule Status <span class="req">*</span>
+        </label>
+        <select id="status" name="status" class="form-control form-select" required>
+          {% for st in schedule_statuses %}
+            <option value="{{ st }}" {% if schedule and schedule.status == st %}selected{% endif %}>
+              {{ st }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Notes / Logistics -->
+      <div class="form-group form-col-full">
+        <label for="notes" class="form-label">
+          Call Sheet Notes & Equipment Logistics
+        </label>
+        <textarea
+          id="notes"
+          name="notes"
+          rows="3"
+          class="form-control"
+          placeholder="Rain tower activation, stunt rehearsals at 07:30, crane setup, fire marshal on set..."
+        >{{ schedule.notes if schedule else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('schedules.index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {{ 'Update Call Sheet' if action == 'edit' else 'Publish Call Sheet' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

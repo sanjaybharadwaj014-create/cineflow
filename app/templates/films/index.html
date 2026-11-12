@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Film Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>🎬</span> Film Management
+    </h1>
+    <p class="page-subtitle">Manage feature films, documentaries, and short film projects across all production cycles.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('films.create') }}" class="btn btn-primary">
+      <span>+</span> Create New Film
+    </a>
+  </div>
+</div>
+
+<!-- Filter Toolbar -->
+<form method="GET" action="{{ url_for('films.index') }}" class="filter-toolbar">
+  <div class="filter-group">
+    <input
+      type="text"
+      name="q"
+      value="{{ search_query }}"
+      placeholder="Search title, director, code..."
+      class="form-control"
+      style="min-width: 250px;"
+    >
+
+    <select name="status" class="form-control form-select">
+      <option value="">All Production Stages</option>
+      {% for status in production_statuses %}
+        <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>
+          {{ status }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or status_filter %}
+      <a href="{{ url_for('films.index') }}" class="btn btn-secondary btn-sm" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </div>
+
+  <div style="font-size: 0.85rem; color: var(--text-muted);">
+    Showing <strong>{{ films|length }}</strong> film project{{ 's' if films|length != 1 else '' }}
+  </div>
+</form>
+
+<!-- Films Table Card -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Film ID</th>
+          <th>Title</th>
+          <th>Director</th>
+          <th>Genre</th>
+          <th>Production Status</th>
+          <th>Schedule Dates</th>
+          <th>Scenes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for film in films %}
+          <tr>
+            <td>
+              <span class="code-pill">{{ film.film_code }}</span>
+            </td>
+            <td>
+              <a href="{{ url_for('films.detail', film_id=film.id) }}" class="table-film-title">
+                {{ film.title }}
+              </a>
+              {% if film.budget %}
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">
+                  Budget: {{ film.budget }}
+                </div>
+              {% endif %}
+            </td>
+            <td>{{ film.director }}</td>
+            <td>{{ film.genre }}</td>
+            <td>
+              <span class="badge {{ status_badge_class(film.production_status) }}">
+                <span class="badge-dot"></span>
+                {{ film.production_status }}
+              </span>
+            </td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">
+              <div>Start: <strong>{{ film.start_date }}</strong></div>
+              <div>Wrap: <strong>{{ film.expected_completion_date }}</strong></div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; font-weight: 600;">
+                {{ film.completed_scenes }} / {{ film.total_scenes }}
+              </div>
+              <div class="progress-track" style="margin-top: 4px; width: 80px;">
+                <div class="progress-fill" style="width: {{ film.progress_percentage }}%;"></div>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <a href="{{ url_for('films.detail', film_id=film.id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  👁️ View
+                </a>
+                <a href="{{ url_for('films.edit', film_id=film.id) }}" class="btn btn-secondary btn-sm" title="Edit Film">
+                  ✏️
+                </a>
+                <form method="POST" action="{{ url_for('films.delete', film_id=film.id) }}" data-confirm="Are you sure you want to delete film '{{ film.title }}'? This will also delete its scenes and schedules." style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Film">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              No film productions match the current filters.
+              <div style="margin-top: 1rem;">
+                <a href="{{ url_for('films.create') }}" class="btn btn-primary btn-sm">Add New Film</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

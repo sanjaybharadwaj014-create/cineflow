@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="cfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <!-- Clapper Top Stick with stripes -->
+  <path d="M6 10 L40 6 L42 14 L8 18 Z" fill="#1e2230" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 9 L11 17 M23 8 L20 16 M32 7 L29 15" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Clapper Body -->
+  <rect x="6" y="16" width="36" height="24" rx="4" fill="#161922" stroke="#f59e0b" stroke-width="2"/>
+  <!-- Film Play / Flow Motif -->
+  <polygon points="20,24 32,30 20,36" fill="url(#cfGrad)"/>
+  <circle cx="12" cy="36" r="2" fill="#64748b"/>
+  <circle cx="36" cy="36" r="2" fill="#64748b"/>
+</svg>

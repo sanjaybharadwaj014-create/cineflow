@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}{{ film.title }}{% endblock %}
+
+{% block content %}
+<!-- Film Hero Banner -->
+<div class="film-hero">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span class="code-pill" style="font-size: 0.9rem;">{{ film.film_code }}</span>
+        <span class="badge {{ status_badge_class(film.production_status) }}" style="font-size: 0.85rem;">
+          <span class="badge-dot"></span>
+          {{ film.production_status }}
+        </span>
+      </div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1.2;">
+        {{ film.title }}
+      </h1>
+      <p style="color: var(--accent-gold); font-size: 1rem; margin-top: 4px; font-weight: 500;">
+        Directed by {{ film.director }} &bull; {{ film.genre }}
+      </p>
+    </div>
+
+    <!-- Actions & Stage Switcher -->
+    <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+      <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('films.edit', film_id=film.id) }}" class="btn btn-secondary btn-sm">
+          ✏️ Edit Film
+        </a>
+        <form method="POST" action="{{ url_for('films.delete', film_id=film.id) }}" data-confirm="Are you sure you want to delete '{{ film.title }}'?" style="display: inline;">
+          <button type="submit" class="btn btn-danger btn-sm">
+            🗑️ Delete
+          </button>
+        </form>
+      </div>
+
+      <!-- Quick Stage Switcher Form -->
+      <form method="POST" action="{{ url_for('production.update_stage', film_id=film.id) }}" style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">STAGE:</span>
+        <select name="production_status" class="form-control form-select" style="padding: 4px 28px 4px 8px; font-size: 0.82rem;" onchange="this.form.submit()">
+          {% for status in production_statuses %}
+            <option value="{{ status }}" {% if film.production_status == status %}selected{% endif %}>
+              {{ status }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <div class="film-hero-meta">
+    <div class="meta-item">
+      <span>📅</span>
+      <span><strong>Start:</strong> {{ film.start_date }}</span>
+    </div>
+    <div class="meta-item">
+      <span>🏁</span>
+      <span><strong>Expected Wrap:</strong> {{ film.expected_completion_date }}</span>
+    </div>
+    {% if film.budget %}
+      <div class="meta-item">
+        <span>💰</span>
+        <span><strong>Budget:</strong> {{ film.budget }}</span>
+      </div>
+    {% endif %}
+    <div class="meta-item">
+      <span>🎞️</span>
+      <span><strong>Scene Completion:</strong> {{ film.completed_scenes }} / {{ film.total_scenes }} ({{ film.progress_percentage }}%)</span>
+    </div>
+  </div>
+
+  <div class="progress-track" style="margin-top: 1.25rem; height: 8px;">
+    <div class="progress-fill" style="width: {{ film.progress_percentage }}%;"></div>
+  </div>
+
+  {% if film.synopsis %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.92rem; line-height: 1.6;">
+      <strong style="color: var(--text-main);">Synopsis:</strong> {{ film.synopsis }}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Section 1: Film Scenes -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>🎞️</span> Scripted Scenes ({{ scenes|length }})
+    </h2>
+    <a href="{{ url_for('scenes.create', film_id=film.id) }}" class="btn btn-primary btn-sm">
+      <span>+</span> Add Scene
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Scene #</th>
+          <th>Location</th>
+          <th>Day / Night</th>
+          <th>Characters</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sc in scenes %}
+          <tr>
+            <td>
+              <span class="code-pill">Scene {{ sc.scene_number }}</span>
+            </td>
+            <td><strong>{{ sc.location }}</strong></td>
+            <td>
+              <span style="font-size: 0.85rem;">{{ day_night_icon(sc.day_night) }} {{ sc.day_night }}</span>
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">{{ sc.characters }}</td>
+            <td style="font-size: 0.82rem;">{{ sc.shooting_date or 'TBD' }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('scenes.update_status', scene_id=sc.id) }}" style="display: inline;">
+                <select name="status" class="form-control form-select" style="padding: 3px 26px 3px 8px; font-size: 0.78rem;" onchange="this.form.submit()">
+                  <option value="Draft" {% if sc.status == 'Draft' %}selected{% endif %}>Draft</option>
+                  <option value="Scheduled" {% if sc.status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
+                  <option value="Shooting" {% if sc.status == 'Shooting' %}selected{% endif %}>Shooting</option>
+                  <option value="Completed" {% if sc.status == 'Completed' %}selected{% endif %}>Completed</option>
+                </select>
+              </form>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('scenes.edit', scene_id=sc.id) }}" class="btn btn-secondary btn-sm" title="Edit Scene">✏️</a>
+                <a href="{{ url_for('schedules.create', scene_id=sc.id, film_id=film.id) }}" class="btn btn-secondary btn-sm" title="Schedule Shoot">📅</a>
+                <form method="POST" action="{{ url_for('scenes.delete', scene_id=sc.id) }}" data-confirm="Delete Scene {{ sc.scene_number }}?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Scene">🗑️</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No scenes recorded for this film yet.
+              <div style="margin-top: 8px;">
+                <a href="{{ url_for('scenes.create', film_id=film.id) }}" class="btn btn-primary btn-sm">Add First Scene</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 2: Shooting Schedules Timeline for this film -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>📅</span> Shooting Call Sheets & Schedule ({{ schedules|length }})
+    </h2>
+    <a href="{{ url_for('schedules.create', film_id=film.id) }}" class="btn btn-primary btn-sm">
+      <span>+</span> Add Call Sheet
+    </a>
+  </div>
+  <div class="card-body">
+    {% if schedules %}
+      <div class="call-sheet-list">
+        {% for shoot in schedules %}
+          <div class="call-sheet-card">
+            <div class="call-time-badge">
+              <div class="call-time-label">Call Time</div>
+              <div class="call-time-value">{{ shoot.call_time }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">{{ shoot.date }}</div>
+            </div>
+
+            <div>
+              <div class="schedule-scene-title">
+                Scene {{ shoot.scene.scene_number }}: {{ shoot.scene.day_night }}
+              </div>
+              <div class="schedule-location">
+                📍 {{ shoot.location }}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 4px;">
+                Characters: {{ shoot.scene.characters }}
+              </div>
+              {% if shoot.notes %}
+                <div style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 4px;">
+                  📌 Notes: {{ shoot.notes }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+              <span class="badge {{ status_badge_class(shoot.status) }}">
+                {{ shoot.status }}
+              </span>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('schedules.edit', schedule_id=shoot.id) }}" class="btn btn-secondary btn-sm" title="Edit Schedule">✏️</a>
+                <form method="POST" action="{{ url_for('schedules.delete', schedule_id=shoot.id) }}" data-confirm="Remove this schedule entry?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Schedule">🗑️</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+        No shooting schedules scheduled for this film.
+        <div style="margin-top: 8px;">
+          <a href="{{ url_for('schedules.create', film_id=film.id) }}" class="btn btn-primary btn-sm">Schedule a Scene</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section 3: Cast & Crew Assigned to this Film -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>👥</span> Cast & Production Crew ({{ crew_members|length }})
+    </h2>
+    <a href="{{ url_for('crew.create', film_id=film.id) }}" class="btn btn-primary btn-sm">
+      <span>+</span> Assign Crew/Cast
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Character</th>
+          <th>Contact</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in crew_members %}
+          <tr>
+            <td><strong>{{ member.name }}</strong></td>
+            <td>{{ member.role }}</td>
+            <td>
+              <span class="badge badge-secondary">{{ member.department }}</span>
+            </td>
+            <td>
+              {% if member.department == 'Cast' and member.character and member.character != 'N/A' %}
+                <span class="code-pill">{{ member.character }}</span>
+              {% else %}
+                <span style="color: var(--text-subtle);">{{ member.character }}</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">{{ member.contact }}</td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('crew.edit', member_id=member.id) }}" class="btn btn-secondary btn-sm">✏️</a>
+                <form method="POST" action="{{ url_for('crew.delete', member_id=member.id) }}" data-confirm="Remove {{ member.name }}?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No cast or crew assigned directly to this project.
+              <div style="margin-top: 8px;">
+                <a href="{{ url_for('crew.create', film_id=film.id) }}" class="btn btn-primary btn-sm">Assign Member</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

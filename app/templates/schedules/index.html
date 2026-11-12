@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Shooting Schedule & Call Sheets{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>📅</span> Shooting Schedule & Call Sheets
+    </h1>
+    <p class="page-subtitle">Coordinate daily call times, soundstages, on-location shoots, and scene production execution.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('schedules.create') }}" class="btn btn-primary">
+      <span>+</span> Create Call Sheet
+    </a>
+  </div>
+</div>
+
+<!-- View Tabs / Filters -->
+<div style="display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap;">
+  <a href="{{ url_for('schedules.index', view='all', film_id=selected_film_id) }}" class="btn {% if current_view == 'all' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+    All Schedules
+  </a>
+  <a href="{{ url_for('schedules.index', view='today', film_id=selected_film_id) }}" class="btn {% if current_view == 'today' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+    ⚡ Today's Shoots
+  </a>
+  <a href="{{ url_for('schedules.index', view='upcoming', film_id=selected_film_id) }}" class="btn {% if current_view == 'upcoming' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+    📅 Upcoming Only
+  </a>
+  <a href="{{ url_for('schedules.index', view='completed', film_id=selected_film_id) }}" class="btn {% if current_view == 'completed' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+    ✅ Wrapped Shoots
+  </a>
+</div>
+
+<!-- Filter Toolbar -->
+<form method="GET" action="{{ url_for('schedules.index') }}" class="filter-toolbar">
+  <input type="hidden" name="view" value="{{ current_view }}">
+  <div class="filter-group">
+    <input
+      type="text"
+      name="q"
+      value="{{ search_query }}"
+      placeholder="Search location, call time, notes..."
+      class="form-control"
+      style="min-width: 250px;"
+    >
+
+    <!-- Film Selector -->
+    <select name="film_id" class="form-control form-select">
+      <option value="">All Film Productions</option>
+      {% for f in films %}
+        <option value="{{ f.id }}" {% if selected_film_id == f.id %}selected{% endif %}>
+          {{ f.title }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or selected_film_id %}
+      <a href="{{ url_for('schedules.index', view=current_view) }}" class="btn btn-secondary btn-sm" style="color: var(--text-muted);">Reset</a>
+    {% endif %}
+  </div>
+
+  <div style="font-size: 0.85rem; color: var(--text-muted);">
+    Total: <strong>{{ schedules|length }}</strong> call sheet{{ 's' if schedules|length != 1 else '' }}
+  </div>
+</form>
+
+<!-- Call Sheets Cards -->
+<div class="card">
+  <div class="card-body">
+    {% if schedules %}
+      <div class="call-sheet-list">
+        {% for shoot in schedules %}
+          <div class="call-sheet-card" style="{% if shoot.date == today_str %}border-color: var(--accent-gold); box-shadow: var(--shadow-gold);{% endif %}">
+            <!-- Call Time Box -->
+            <div class="call-time-badge">
+              <div class="call-time-label">Call Time</div>
+              <div class="call-time-value">{{ shoot.call_time }}</div>
+              <div style="font-size: 0.78rem; font-weight: 600; color: {% if shoot.date == today_str %}var(--accent-gold){% else %}var(--text-muted){% endif %}; margin-top: 3px;">
+                {% if shoot.date == today_str %}
+                  ⚡ TODAY
+                {% else %}
+                  {{ shoot.date }}
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Scene Details -->
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span class="code-pill">{{ shoot.film.title }}</span>
+                <span class="badge badge-secondary">Scene {{ shoot.scene.scene_number }}</span>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">
+                  {{ day_night_icon(shoot.scene.day_night) }} {{ shoot.scene.day_night }}
+                </span>
+              </div>
+
+              <div class="schedule-location">
+                📍 <strong>{{ shoot.location }}</strong>
+              </div>
+
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px;">
+                Cast on set: <strong>{{ shoot.scene.characters }}</strong>
+              </div>
+
+              {% if shoot.notes %}
+                <div style="font-size: 0.8rem; color: var(--accent-gold); margin-top: 5px;">
+                  📌 {{ shoot.notes }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Status & Actions -->
+            <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+              <!-- Quick Status Change Form -->
+              <form method="POST" action="{{ url_for('schedules.update_status', schedule_id=shoot.id) }}">
+                <select name="status" class="form-control form-select" style="padding: 4px 28px 4px 8px; font-size: 0.78rem;" onchange="this.form.submit()">
+                  {% for st in schedule_statuses %}
+                    <option value="{{ st }}" {% if shoot.status == st %}selected{% endif %}>
+                      {{ st }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </form>
+
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('schedules.edit', schedule_id=shoot.id) }}" class="btn btn-secondary btn-sm" title="Edit Call Sheet">
+                  ✏️
+                </a>
+                <form method="POST" action="{{ url_for('schedules.delete', schedule_id=shoot.id) }}" data-confirm="Remove this schedule entry?" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete Call Sheet">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+        No shooting schedules found matching the filter.
+        <div style="margin-top: 1rem;">
+          <a href="{{ url_for('schedules.create') }}" class="btn btn-primary btn-sm">Add New Call Sheet</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

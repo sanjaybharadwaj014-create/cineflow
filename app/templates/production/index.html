@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Production Status & Pipeline{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <span>⚡</span> Production Status & Pipeline
+    </h1>
+    <p class="page-subtitle">Track film lifecycle stages from development script breakdown to principal photography and final delivery.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('films.create') }}" class="btn btn-primary">
+      <span>+</span> Add New Film Project
+    </a>
+  </div>
+</div>
+
+<!-- Production Metrics Banner -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Total Slate</span>
+      <div class="stat-icon icon-gold">🎬</div>
+    </div>
+    <div class="stat-value">{{ total_films }}</div>
+    <div class="stat-subtext">Active films in all stages</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Overall Wrap Progress</span>
+      <div class="stat-icon icon-emerald">📊</div>
+    </div>
+    <div class="stat-value">{{ overall_progress }}%</div>
+    <div class="stat-subtext">{{ completed_scenes }} of {{ total_scenes }} scenes completed</div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: {{ overall_progress }}%;"></div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Principal Photography</span>
+      <div class="stat-icon icon-blue">🎥</div>
+    </div>
+    <div class="stat-value">{{ stages['Shooting']|length }}</div>
+    <div class="stat-subtext">Films actively rolling cameras</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Completed Productions</span>
+      <div class="stat-icon icon-purple">🏆</div>
+    </div>
+    <div class="stat-value">{{ stages['Completed']|length }}</div>
+    <div class="stat-subtext">Wrapped & delivered projects</div>
+  </div>
+</div>
+
+<!-- Kanban Stage Board -->
+<div class="pipeline-board">
+  {% for status in production_statuses %}
+    {% set stage_films = stages[status] %}
+    <div class="pipeline-col">
+      <!-- Column Header -->
+      <div class="col-header {% if status == 'Pre-production' %}col-header-pre{% elif status == 'Shooting' %}col-header-shoot{% elif status == 'Post-production' %}col-header-post{% else %}col-header-done{% endif %}">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>
+            {% if status == 'Pre-production' %}📋
+            {% elif status == 'Shooting' %}🎬
+            {% elif status == 'Post-production' %}✂️
+            {% else %}🏁
+            {% endif %}
+          </span>
+          <span>{{ status }}</span>
+        </div>
+        <span class="col-count">{{ stage_films|length }}</span>
+      </div>
+
+      <!-- Column Film Cards -->
+      <div class="col-cards">
+        {% for film in stage_films %}
+          <div class="pipeline-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span class="code-pill">{{ film.film_code }}</span>
+              {% if film.budget %}
+                <span style="font-size: 0.75rem; color: var(--text-subtle);">{{ film.budget }}</span>
+              {% endif %}
+            </div>
+
+            <a href="{{ url_for('films.detail', film_id=film.id) }}" class="pipeline-card-title">
+              {{ film.title }}
+            </a>
+
+            <div class="pipeline-card-meta">
+              <div>Dir. {{ film.director }}</div>
+              <div>Genre: {{ film.genre }}</div>
+            </div>
+
+            <!-- Scene Progress Meter -->
+            <div style="margin-bottom: 12px; background: var(--bg-dark); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: var(--text-muted);">Scene Progress:</span>
+                <strong>{{ film.completed_scenes }} / {{ film.total_scenes }} ({{ film.progress_percentage }}%)</strong>
+              </div>
+              <div class="progress-track" style="margin-top: 0; height: 5px;">
+                <div class="progress-fill" style="width: {{ film.progress_percentage }}%;"></div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: var(--text-subtle); margin-bottom: 12px;">
+              <div>📅 Start: {{ film.start_date }}</div>
+              <div>🏁 Target Wrap: {{ film.expected_completion_date }}</div>
+            </div>
+
+            <!-- Move Stage Selector -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 6px;">
+              <form method="POST" action="{{ url_for('production.update_stage', film_id=film.id) }}" style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-subtle); font-weight: 700;">
+                  Move Production Stage:
+                </label>
+                <select name="production_status" class="form-control form-select" style="padding: 4px 26px 4px 8px; font-size: 0.78rem;" onchange="this.form.submit()">
+                  {% for s in production_statuses %}
+                    <option value="{{ s }}" {% if film.production_status == s %}selected{% endif %}>
+                      {{ s }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align: center; color: var(--text-subtle); padding: 3rem 1rem; font-size: 0.85rem; border: 1px dashed var(--border-color); border-radius: var(--radius-sm);">
+            No projects in {{ status }}.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
